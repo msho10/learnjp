@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Translation and Morphological Analysis Schema",
+  "description": "Defines the structure for translation result.",
+  
+  "type": "object",
+  
+  "$defs": {
+    "Morpheme": {
+      "type": "object",
+      "description": "Morpheme or token, including its surface form, base or dictionary form (lemmatization), parts of speech (POS) in English, romaji, and english explanation.",
+      "properties": {
+        "token_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "surface_form": {
+          "type": "string",
+          "minLength": 1
+        },
+        "base_form": {
+          "type": "string",
+          "minLength": 1
+        },
+        "POS": {
+          "type": "string",
+          "minLength": 1
+        },
+        "english_explanation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "romaji": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": ["token_id", "surface_form", "base_form", "POS", "english_explanation", "romaji"]
+    },
+    "Bunsetsu": {
+      "type": "object",
+      "description": "The Japanese bunsetsu phrase and its English translation.",
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "japanese_phrase": {
+          "type": "string",
+          "minLength": 1
+        },
+        "english_translation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "morphological_analysis": {
+          "type": "array",
+          "description": "A list of morphemes (tokens), including their surface forms, base or dictionary forms (lemmatizations), parts of speech (POS) in English, romaji, and english explanations.",
+          "items": {
+            "$ref": "#/$defs/Morpheme"      
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }     
+      },
+      "required": ["index", "japanese_phrase", "english_translation", "morphological_analysis"]
+    }   
+  },
+
+  "properties": {
+    "create_datetime": {
+      "type": "string",
+      "description": "Timestamp of the translation.",
+      "format": "date-time" 
+    },
+    "bunsetsu_breakdown": {
+      "type": "array",
+      "description": "A list of Japanese phrases based on Bunsetsu breakdown and their English translations.",
+      "items": {
+        "$ref": "#/$defs/Bunsetsu"      
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  },
+  
+  "required": [
+    "create_datetime", 
+    "bunsetsu_breakdown"
+  ]
+
+}

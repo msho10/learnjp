@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}LearnJP{% endblock %}
+
+{% block content %}
+    <div class="d-flex flex-row">
+        <div class="container" id="input_container">
+            <p class="text-danger fw-bold fs-5" id="error_message">{{error_message}}</p>
+            <form action="" method="post" enctype="multipart/form-data" id="input_form">
+                {% csrf_token %}
+                <div class="mb-2 fs-4">
+                {{ form.jp_text.label_tag }}
+                {{ form.jp_text }}
+                </div>    
+                <button type="submit" class="btn btn-primary mb-5" >Submit</button>   
+
+                <div class="mb-3 fs-5">
+                {{ form.image_file.label_tag }}
+                {{ form.image_file }}
+                </div>         
+            </form>                            
+        </div>
+        <div class="container loader-container my-5" id="upload_animation" >
+            <div class="loader text-center"></div>
+            <p class="loader-text">Processing your image...</p>
+        </div>    
+    </div>
+
+{% endblock %}
+
+{% block page_scripts %}
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="{% static 'js/index_page.js' %}"></script>
+{% endblock %}
