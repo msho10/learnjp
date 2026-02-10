@@ -1,7 +1,6 @@
 from .cache import CACHE_STORE
 from .JsonResponse import JsonResponse
-from .services import *
-from .utils import *
+from . import services, utils
 from django.shortcuts import render
 from django import forms
 from django.conf import settings
@@ -9,12 +8,11 @@ from django.http import HttpResponse
 from pydantic import ValidationError
 import time
 
-MAX_TEXT_LENGTH = 200
 
 class InputForm(forms.Form):
     jp_text = forms.CharField(
-        max_length = MAX_TEXT_LENGTH,    
-        label='Enter Japanese text (max 200 characters)',  
+        max_length = settings.MAX_TEXT_LENGTH,    
+        label=f'Enter Japanese text (max {settings.MAX_TEXT_LENGTH} characters)',  
         required=False,  
         widget=forms.Textarea(
             attrs={
@@ -42,14 +40,16 @@ def analyze(request):
         json_result = CACHE_STORE.get_analysis(key)        
     else:
         jp_text = CACHE_STORE.get_original_text(key)
-        json_result = openAI_analyze(jp_text) 
+        json_result = services.openAI_analyze(jp_text) 
 
         try: 
             JsonResponse.model_validate_json(json_result) 
             CACHE_STORE.add_analysis(key, json_result)  
         except ValidationError as e:
-            print(json_result)
-            print(e)
+            if settings.DEBUG:
+                print(json_result)
+                print(e)
+            # return empty JSON if API response is invalid
             json_result = '{}'
                  
     return HttpResponse(json_result, content_type='application/json')
@@ -79,27 +79,32 @@ def translate_only(request):
         if not form.is_valid():
             error_message = 'Invalid input. Please enter Japanese text only.'
             return render(request, 'index.html', {'form': form, 'error_message': error_message})
-
+        
+        # Check if both text and image are empty
         uploaded_file = form.files['image_file'] if form.files else None
+        jp_text = form.cleaned_data.get('jp_text', '')
+        
+        if not jp_text and not uploaded_file:
+            error_message = 'Please enter Japanese text or upload an image.'
+            return render(request, 'index.html', {'form': form, 'error_message': error_message})
         
         if uploaded_file:
             start_time = time.time()        
-            jp_text = extract_text_from_image(uploaded_file)
+            jp_text = utils.extract_text_from_image(uploaded_file)
             end_time = time.time()
             time_taken += f"{end_time - start_time:.2f} seconds (OCR), "   
-            if len(jp_text) > MAX_TEXT_LENGTH:
-                jp_text = jp_text[:MAX_TEXT_LENGTH]         
-                error_message = "**Text in image has exceeded the allowed limit. Extra characters are trimmed."       
-        else:
-            jp_text = form.cleaned_data['jp_text']
-
+        
+        if jp_text and len(jp_text) > settings.MAX_TEXT_LENGTH:
+            jp_text = jp_text[:settings.MAX_TEXT_LENGTH]         
+            error_message = "**Text in image has exceeded the allowed limit. Extra characters are trimmed."       
+        
         key = CACHE_STORE.get_key(jp_text)
         if CACHE_STORE.has_translation(key):
             result = CACHE_STORE.get_translation(key)
             time_taken += '0 seconds (translation)'
         else:
             start_time = time.time()        
-            result = openAI_translate(jp_text)    
+            result = services.openAI_translate(jp_text)    
             end_time = time.time()
             time_taken += f"{end_time - start_time:.2f} seconds (translation)"
             CACHE_STORE.add_translation(jp_text=jp_text, en_text=result)

@@ -1,0 +1,87 @@
+{
+  "create_datetime": "2025-12-10T14:23:45Z",
+  "bunsetsu_breakdown": [
+    {
+      "index": 1,
+      "japanese_phrase": "春の海",
+      "english_translation": "the spring sea",
+      "morphological_analysis": [
+        {
+          "token_id": 1,
+          "english_explanation": "spring (season)",
+          "romaji": "haru"
+        },
+        {
+          "token_id": 2,
+          "surface_form": "の",
+          "base_form": "の",
+          "POS": "Particle (Genitive)",
+          "english_explanation": "possessive marker, “of”",
+          "romaji": "no"
+        },
+        {
+          "token_id": 3,
+          "surface_form": "海",
+          "base_form": "海",
+          "POS": "Noun",
+          "english_explanation": "sea, ocean",
+          "romaji": "umi"
+        }
+      ]
+    },
+    {
+      "index": 2,
+      "japanese_phrase": "ひねもすのたり",
+      "english_translation": "gently swaying all day",
+      "morphological_analysis": [
+        {
+          "token_id": 1,
+          "surface_form": "ひねもす",
+          "base_form": "ひねもす",
+          "POS": "Adverb",
+          "english_explanation": "all day, throughout the day",
+          "romaji": "hinemosu"
+        },
+        {
+          "token_id": 2,
+          "surface_form": "の",
+          "base_form": "の",
+          "POS": "Particle (Genitive)",
+          "english_explanation": "linking particle (here part of the adverbial phrase)",
+          "romaji": "no"
+        },
+        {
+          "token_id": 3,
+          "surface_form": "たり",
+          "base_form": "たる",
+          "POS": "Auxiliary Verb (Classical)",
+          "english_explanation": "classical verb “to be”, used to form descriptive phrases",
+          "romaji": "tari"
+        }
+      ]
+    },
+    {
+      "index": 3,
+      "japanese_phrase": "のたりかな",
+      "english_translation": "how gently it sways!",
+      "morphological_analysis": [
+        {
+          "token_id": 1,
+          "surface_form": "のたり",
+          "base_form": "のたり",
+          "POS": "Adverb (Onomatopoeic)",
+          "english_explanation": "gently swaying, lazily moving",
+          "romaji": "notari"
+        },
+        {
+          "token_id": 2,
+          "surface_form": "かな",
+          "base_form": "かな",
+          "POS": "Particle (Exclamatory)",
+          "english_explanation": "expresses wonder or rhetorical question, “I wonder…”, “how…!”",
+          "romaji": "kana"
+        }
+      ]
+    }
+  ]
+}

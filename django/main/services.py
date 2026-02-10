@@ -28,12 +28,11 @@ def openAI_translate(jp_text: str):
         )
         return response.choices[0].message.content
 
-    except:
-        if response and response.choices:
+    except Exception as e:
+        print(f"Translation API error: {e}")
+        if 'response' in locals() and response and response.choices:
             print(response.choices[0].message.content) 
-        result = None    
-    
-    return result
+        return None
 
     
 def openAI_analyze(jp_text: str):
@@ -56,9 +55,9 @@ def openAI_analyze(jp_text: str):
         )
         result = response.choices[0].message.content.lstrip("```json").rstrip("`")        
 
-    except:
-        if response and response.choices:
-            print(response.choices[0].message.content) 
-        result = None    
+    except Exception as e:
+        print(f"Analysis API error: {e}")
+        if 'response' in locals() and response and response.choices:
+            result = None    
 
     return result

@@ -52,10 +52,12 @@ class CacheStore:
         return key in self._translation_cache
 
     def _checkCacheLimit(self):
-        if len(self._request_queue) == settings.CACHE_SIZE:
+        if len(self._request_queue) >= settings.CACHE_SIZE:
             # hitting cache limit, remove the oldest entry
             del_key = self._request_queue.popleft()
-            del self._translation_cache[del_key]
-            del self._analysis_cache[del_key]
+            if del_key in self._translation_cache:
+                del self._translation_cache[del_key]
+            if del_key in self._analysis_cache:
+                del self._analysis_cache[del_key]
 
 CACHE_STORE = CacheStore()
