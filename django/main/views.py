@@ -92,7 +92,10 @@ def translate_only(request):
             start_time = time.time()        
             jp_text = utils.extract_text_from_image(uploaded_file)
             end_time = time.time()
-            time_taken += f"{end_time - start_time:.2f} seconds (OCR), "   
+            time_taken += f"{end_time - start_time:.2f} seconds (OCR), "
+            if not jp_text:
+                error_message = 'No Japanese text found in image.'
+                return render(request, 'index.html', {'form': form, 'error_message': error_message})  
         
         if jp_text and len(jp_text) > settings.MAX_TEXT_LENGTH:
             jp_text = jp_text[:settings.MAX_TEXT_LENGTH]         
