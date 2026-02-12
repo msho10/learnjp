@@ -70,7 +70,7 @@ class BVTImageTest(SimpleTestCase):
         self.assertTemplateUsed(response, 'index.html')
         self.assertContains(response, 'No Japanese text found in image')
     
-    def test_image_upload_large_file_truncation(self, mock_ocr, mock_translate):
+    def test_image_upload_with_long_text(self, mock_ocr, mock_translate):
         """BVT: System should handle OCR result longer than 200 characters"""
         long_text = "あ" * (settings.MAX_TEXT_LENGTH + 1)
         mock_ocr.return_value = long_text
@@ -93,7 +93,7 @@ class BVTImageTest(SimpleTestCase):
         self.assertContains(response, 'exceeded the allowed limit')
     
     
-    def test_image_upload_api_failure(self, mock_ocr, mock_translate):
+    def test_image_upload_translation_failure(self, mock_ocr, mock_translate):
         """BVT: System should handle OCR API failures gracefully"""
         mock_ocr.return_value = self.test_jp_text
         mock_translate.return_value = None
@@ -114,35 +114,40 @@ class BVTImageTest(SimpleTestCase):
         self.assertContains(response, 'Unable to process request')
     
 
-    # def test_image_upload_with_translation_cache(self, mock_ocr, mock_translate):
-    #     """BVT: Image upload should use cached translation when available (NOTE: ONLY TRANSLATION IS CACHED, NOT THE IMAGE) """
-    #     mock_ocr.return_value = self.test_jp_text
-    #     mock_translate.return_value = self.test_en_translation
+    def test_image_upload_with_translation_cached(self, mock_ocr, mock_translate):
+        """BVT: Image upload should use cached translation when available (NOTE: ONLY TRANSLATION IS CACHED, NOT THE IMAGE) """
+        mock_ocr.return_value = self.test_jp_text
+        mock_translate.return_value = self.test_en_translation
         
-    #     # First request - should call the API
-    #     image_content = b'fake image content'
-    #     uploaded_file = SimpleUploadedFile(
-    #         "test_image.jpg",
-    #         image_content,
-    #         content_type="image/jpeg"
-    #     )
+        # First request - should call the API
+        image_content = b'fake image content'
+        uploaded_file = SimpleUploadedFile(
+            "test_image1.jpg",
+            image_content,
+            content_type="image/jpeg"
+        )
         
-    #     self.client.post(reverse('main'), {
-    #        'image_file': uploaded_file
-    #     })
+        self.client.post(reverse('main'), {
+           'image_file': uploaded_file
+        })
         
-    #     # Reset mocks to verify they're not called again
-    #     #mock_translate.reset_mock()
+        # Reset mocks to verify they're not called again
+        mock_translate.reset_mock()
         
-    #     # Second request with same OCR result - should use cache
-    #     response = self.client.post(reverse('main'), {
-    #         'image_file': uploaded_file
-    #     })
+        # Second request with same OCR result - should use cache
+        uploaded_file = SimpleUploadedFile(
+            "test_image2.jpg",
+            image_content,
+            content_type="image/jpeg"
+        )
+        response = self.client.post(reverse('main'), {
+            'image_file': uploaded_file
+        })
         
-    #     self.assertEqual(response.status_code, 200)
-    #     #mock_translate.assert_not_called()  # Should not call API again
-    #     self.assertContains(response, self.test_jp_text)
-    #     self.assertContains(response, self.test_en_translation)
+        self.assertEqual(response.status_code, 200)
+        mock_translate.assert_not_called()  # Should not call API again
+        self.assertContains(response, self.test_jp_text)
+        self.assertContains(response, self.test_en_translation)
         
 
     def test_image_upload_with_empty_file(self, mock_ocr, mock_translate):
@@ -210,30 +215,3 @@ class BVTImageTest(SimpleTestCase):
             self.assertEqual(response.context['mode'], 'debug')
             self.assertIn('time_taken', response.context)
     
-
-    # THIS TEST CURRENTLY FAILS. WILL FIX IT IN ANOTHER CHECK-IN.
-    # def test_image_upload_concurrent_requests(self, mock_ocr, mock_translate):
-    #     """BVT: System should handle multiple concurrent image uploads"""
-    #     mock_ocr.return_value = self.test_jp_text
-    #     mock_translate.return_value = self.test_en_translation
-        
-    #     image_content = b'fake image content'
-    #     uploaded_file = SimpleUploadedFile(
-    #         "test_image.jpg",
-    #         image_content,
-    #         content_type="image/jpeg"
-    #     )
-        
-    #     # Simulate multiple concurrent requests
-    #     responses = []
-    #     for i in range(3):
-    #         response = self.client.post(reverse('main'), {
-    #             'image_file': uploaded_file
-    #         })
-    #         responses.append(response)
-        
-    #     # All should succeed
-    #     for response in responses:
-    #         self.assertEqual(response.status_code, 200)
-    #         self.assertContains(response, self.test_jp_text)
-    #         self.assertContains(response, self.test_en_translation)
