@@ -7,7 +7,7 @@ import os
 
 @patch('main.views.services.openAI_translate')
 @patch('main.views.services.openAI_analyze')
-class BVTCoreTest(SimpleTestCase):
+class BVTAnalysisTest(SimpleTestCase):
     """Business Validation Tests for morphological analysis functionality with mocked dependencies"""
     
     def setUp(self):
