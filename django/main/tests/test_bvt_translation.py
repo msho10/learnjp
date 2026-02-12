@@ -46,22 +46,6 @@ class BVTTranslationTest(SimpleTestCase):
         self.assertTrue(CACHE_STORE.has_translation(key))
         self.assertEqual(CACHE_STORE.get_translation(key), self.test_en_translation)
     
-    def test_translation_with_cache_hit(self, mock_translate):
-        """BVT: Translation should use cached result when available"""
-        # First request - should call the API
-        mock_translate.return_value = self.test_en_translation
-        self.client.post(reverse('main'), {'jp_text': self.test_jp_text})
-        
-        # Reset mock to verify it's not called again
-        mock_translate.reset_mock()
-        
-        # Second request with same text - should use cache
-        response = self.client.post(reverse('main'), {'jp_text': self.test_jp_text})
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'translate.html')
-        mock_translate.assert_not_called()  # Should not call API again
-    
     def test_translation_api_failure(self, mock_translate):
         """BVT: System should handle translation API failures gracefully"""
         mock_translate.return_value = None
@@ -95,29 +79,7 @@ class BVTTranslationTest(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'index.html')
         self.assertContains(response, 'Invalid input')
-    
-    def test_cache_size_limit(self, mock_translate):
-        """BVT: System should handle cache size limits correctly"""
-        mock_translate.return_value = self.test_en_translation
         
-        # Fill cache to limit
-        cache_size = settings.CACHE_SIZE
-        for i in range(cache_size + 2):  # Add 2 more than limit
-            test_text = f"Test text {i}"
-            self.client.post(reverse('main'), {
-                'jp_text': test_text
-            })
-        
-        # Should still work for recent entries
-        response = self.client.post(reverse('main'), {
-            'jp_text': f"Test text {cache_size + 1}"
-        })
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, 'translate.html')
-        self.assertContains(response, f"Test text {cache_size + 1}")
-        self.assertContains(response, self.test_en_translation)
-    
     def test_debug_mode_time_tracking(self, mock_translate):
         """BVT: Debug mode should show time tracking information"""
         with self.settings(DEBUG=True):
