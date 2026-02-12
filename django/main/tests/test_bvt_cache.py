@@ -6,7 +6,7 @@ from main.cache import CACHE_STORE
 import os
 
 @patch('main.views.services.openAI_translate')
-class BVTTranslationTest(SimpleTestCase):
+class BVTCacheTest(SimpleTestCase):
     """Business Validation Tests for cache functionality with mocked dependencies"""
     
     def setUp(self):
@@ -60,3 +60,58 @@ class BVTTranslationTest(SimpleTestCase):
         self.assertContains(response, self.test_en_translation)
     
     
+    def test_translation_with_cache_corruption(self, mock_translate):
+        """BVT: System should handle corrupted cache entries"""
+        mock_translate.return_value = self.test_en_translation
+        
+        # Create a translation to get a key
+        response = self.client.post(reverse('main'), {
+            'jp_text': self.test_jp_text
+        })
+        
+        key = response.context['key']
+        
+        # Corrupt the cache entry
+        CACHE_STORE._translation_cache[key] = None
+        
+        # Should handle gracefully and re-translate
+        response = self.client.post(reverse('main'), {
+            'jp_text': self.test_jp_text
+        })
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.test_jp_text)
+        self.assertContains(response, self.test_en_translation)
+
+    # Helper function to read file 
+    def _read_file_content(self, filename):
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(current_dir, filename)
+        with open(file_path, 'r', encoding='utf-8') as file:
+            json_result = file.read() 
+            
+        return json_result
+    
+    @patch('main.views.services.openAI_analyze')
+    def test_analysis_with_cache_corruption(self, mock_analysis, mock_translate):
+        """BVT: System should handle corrupted cache entries"""
+        mock_translate.return_value = self.test_en_translation
+        analysis_response = self._read_file_content("test_data_valid_response.json")
+        mock_analysis.return_value = analysis_response
+        
+        # Create a translation to get a key
+        response = self.client.post(reverse('main'), {
+            'jp_text': self.test_jp_text
+        })
+        
+        key = response.context['key']
+        response = self.client.get(reverse('analyze') + f'?key={key}')
+
+        # Corrupt the cache entry
+        CACHE_STORE._analysis_cache[key] = None
+        
+        # Should handle gracefully and get analysis again
+        response = self.client.get(reverse('analyze') + f'?key={key}')
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, analysis_response)

@@ -46,10 +46,10 @@ class CacheStore:
         return ''
 
     def has_analysis(self, key: str) -> bool:
-        return key in self._analysis_cache
+        return (key in self._analysis_cache) and (self._analysis_cache[key])
     
     def has_translation(self, key: str) -> bool:
-        return key in self._translation_cache
+        return (key in self._translation_cache) and (self._translation_cache[key])
 
     def _checkCacheLimit(self):
         if len(self._request_queue) >= settings.CACHE_SIZE:
