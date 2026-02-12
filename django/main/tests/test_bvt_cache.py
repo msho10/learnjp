@@ -20,6 +20,15 @@ class BVTCacheTest(SimpleTestCase):
         CACHE_STORE._request_queue.clear()
         CACHE_STORE._translation_cache.clear()
         CACHE_STORE._analysis_cache.clear()
+
+    # Helper function to read file 
+    def _read_file_content(self, filename):
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        file_path = os.path.join(current_dir, filename)
+        with open(file_path, 'r', encoding='utf-8') as file:
+            json_result = file.read() 
+            
+        return json_result
     
     def test_translation_with_cache_hit(self, mock_translate):
         """BVT: Translation should use cached result when available"""
@@ -36,6 +45,30 @@ class BVTCacheTest(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, 'translate.html')
         mock_translate.assert_not_called()  # Should not call API again
+
+    @patch('main.views.services.openAI_analyze')
+    def test_analysis_with_cache_hit(self, mock_analyze, mock_translate):
+        """BVT: Analysis should use cached result when available"""
+        mock_analyze.return_value = self._read_file_content("test_data_valid_response.json")
+        
+        # First request - should call the API
+        with patch('main.views.services.openAI_translate') as mock_translate:
+            mock_translate.return_value = self.test_en_translation
+            response = self.client.post(reverse('main'), {
+                'jp_text': self.test_jp_text
+            })
+        
+        key = response.context['key']
+        self.client.get(reverse('analyze') + f'?key={key}')
+        
+        # Reset mock to verify it's not called again
+        mock_analyze.reset_mock()
+        
+        # Second request with same key - should use cache
+        response = self.client.get(reverse('analyze') + f'?key={key}')
+        
+        self.assertEqual(response.status_code, 200)
+        mock_analyze.assert_not_called()  # Should not call API again
     
     def test_cache_size_limit(self, mock_translate):
         """BVT: System should handle cache size limits correctly"""
@@ -59,7 +92,6 @@ class BVTCacheTest(SimpleTestCase):
         self.assertContains(response, f"Test text {cache_size + 1}")
         self.assertContains(response, self.test_en_translation)
     
-    
     def test_translation_with_cache_corruption(self, mock_translate):
         """BVT: System should handle corrupted cache entries"""
         mock_translate.return_value = self.test_en_translation
@@ -82,15 +114,6 @@ class BVTCacheTest(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.test_jp_text)
         self.assertContains(response, self.test_en_translation)
-
-    # Helper function to read file 
-    def _read_file_content(self, filename):
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(current_dir, filename)
-        with open(file_path, 'r', encoding='utf-8') as file:
-            json_result = file.read() 
-            
-        return json_result
     
     @patch('main.views.services.openAI_analyze')
     def test_analysis_with_cache_corruption(self, mock_analysis, mock_translate):
@@ -115,3 +138,25 @@ class BVTCacheTest(SimpleTestCase):
         
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, analysis_response)
+
+
+    def test_cache_unavailable(self, mock_translate):
+        """BVT: System should handle gracefully when cache is not available"""
+        mock_translate.return_value = self.test_en_translation
+        
+        # Simulate a scenario where cache operations might fail
+        # by temporarily corrupting the cache structure
+        original_queue = CACHE_STORE._request_queue.copy()
+        CACHE_STORE._request_queue.clear()
+        
+        response = self.client.post(reverse('main'), {
+            'jp_text': self.test_jp_text
+        })
+        
+        # Should still work even with cache issues
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.test_jp_text)
+        self.assertContains(response, self.test_en_translation)
+        
+
+    

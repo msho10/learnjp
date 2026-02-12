@@ -56,29 +56,6 @@ class BVTAnalysisTest(SimpleTestCase):
         # The actual response will be different due to JsonResponse processing
         self.assertIn(response.content.decode(), json_response)
     
-    def test_analysis_with_cache_hit(self, mock_analyze, mock_translate):
-        """BVT: Analysis should use cached result when available"""
-        mock_analyze.return_value = self._read_file_content("test_data_valid_response.json")
-        
-        # First request - should call the API
-        with patch('main.views.services.openAI_translate') as mock_translate:
-            mock_translate.return_value = self.test_en_translation
-            response = self.client.post(reverse('main'), {
-                'jp_text': self.test_jp_text
-            })
-        
-        key = response.context['key']
-        self.client.get(reverse('analyze') + f'?key={key}')
-        
-        # Reset mock to verify it's not called again
-        mock_analyze.reset_mock()
-        
-        # Second request with same key - should use cache
-        response = self.client.get(reverse('analyze') + f'?key={key}')
-        
-        self.assertEqual(response.status_code, 200)
-        mock_analyze.assert_not_called()  # Should not call API again
-    
     def test_analysis_invalid_json_handling(self, mock_analyze, mock_translate):
         """BVT: System should handle invalid JSON from analysis API"""
         mock_analyze.return_value = self._read_file_content("test_data_invalid_response.json")
